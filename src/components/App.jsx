@@ -71,6 +71,7 @@ export default function App() {
     // This conditional below might end up going in the Card components and will call Scoreboard component?
     // Or keep it here and somehow call Card component from here?
 
+    // TODO: Refactor this portion into its own "Game Over function" that resets the game when the player clicks on a duplicate card (see DevTools for Amphibia Memory Game)
     // IF the player clicks on a card they've clicked on previously
     if (currentCard === prevCard) {
       // SET the Score back to 0
@@ -93,6 +94,10 @@ export default function App() {
             High Score: {highScore}
           </p>
         </div>
+        <Deck
+          handleScore={handleScore}
+          handleHighScore={handleHighScore}
+        />
       </>
     );
   }
@@ -102,15 +107,47 @@ export default function App() {
   // Should this function invoke when the entire App component mounts or just when the Deck component mounts?
   // This function is NOT a useEffect (because it needs to be called multiple times, not just once on mount?)
 
-  // Rename this "cardShuffle()"?
   // WHEN this function is called
   // INIT a function or equation that will:
-  function Shuffle() {
+  function Deck() {
     // These might also need to move up as parents for all the components not just this one. They definitely will if Shuffle is in its own file.
     const [pokemon, setPokemon] = useState([]);
     // const [shuffled, setShuffled] = useState([]);
 
-    // Is this useEffect doing too many things? There are 3 functions in it. useEffects should only do one thing?
+    // TODO: How are we going to implement the logic/code that only pulls the starters. Is it by ID number ranges? Do we need to use a "map()" method?
+    // TODO: SET variables equal to the properties we need that represent the starters from the API
+    const starters = async () => {
+      try {
+        // IDs for starter Pokemon from all generations. 
+        // TODO: This array may need to be moved up outside this function and under the App itself instead. Possibly even move the entire function up there too.
+        const starterIds = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393, 495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912]; 
+
+        // PRINT data representing each starter pokemon from the JSON returned from the API
+        const starterData = [];
+        
+        // INIT a "for of" loop for the array representing the starters
+        // FOR each item in the array representing all starter pokemon from the API
+        for (const id of starterIds) {
+          let url = `https://pokeapi.co/api/v2/pokemon/${id}`;
+          let response = await fetch(url);
+          let result = await response.json();
+
+          // PUSH that item's data into the data array representing the starter pokemon
+          starterData.push(result);
+        }
+        // ENDFOR
+        
+        // RETURN the new array representing only starter pokemon
+        return starterData;
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    // CALL the function that fetches only starter pokemon from the API
+    setPokemon(starters);
+
+    // Does this even need to be a useEffect? Or just a normal function called when Deck component mounts?
     // SET the array of cards in a completely different random order
     useEffect(() => {
       const shuffle = (array) => {
@@ -123,41 +160,28 @@ export default function App() {
         }
       };
 
-      // DISPLAY the cards in that new order set by the previous equation or function
+      // SET the cards in the newly shuffled order
       setPokemon(shuffle(pokemon));
-      
-      // TODO: How are we going to implement the logic/code that only pulls the starters. Is it by ID number ranges? Do we need to use a "map()" method?
-      // TODO: SET variables equal to the properties we need that represent the starters from the API
-      const starters = async () => {
-        try {
-          // IDs for starter Pokemon from all generations
-          const starterIds = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393, 495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912]; 
-
-          // PRINT data representing each starter pokemon from the JSON returned from the API
-          const starterData = [];
-          
-          // INIT a "for of" loop for the array representing the starters
-          // FOR each item in the array representing all starter pokemon from the API
-          for (const id of starterIds) {
-            let url = `https://pokeapi.co/api/v2/pokemon/${id}`;
-            let response = await fetch(url);
-            let result = await response.json();
-
-            // PUSH that item's data into the data array representing the starter pokemon
-            starterData.push(result);
-          }
-          // ENDFOR
-          
-          // RETURN the new array representing only starter pokemon
-          return starterData;
-        } catch (err) {
-          console.error(err);
-        }
-      };
-
-      setPokemon(starters);
-      shuffle(pokemon);
     }, [pokemon]);
+
+    return (
+      <>
+        <div className="deck">
+          {/* DISPLAY each card inside the deck */}
+          {pokemon.map((mon) => (
+            <Card 
+              key={mon.id}
+              cardImage={mon.sprites.front_default}
+              cardName={mon.name}
+              onClick={() => {
+                // Logic for handling score changes may go here instead
+                console.log(`You clicked on ${mon.name}`); }
+              }
+            />
+          ))}
+        </div>
+      </>
+    );
   }
 }
 
@@ -170,8 +194,10 @@ function Card() {
   const [cardName, setCardName] = useState('');
 
   // response.json could be { conditional? } depending on the API structure
+  // This might not need to be an Effect either since we only need to fetch the data once per card when the Deck component calls this component. 
+  // Possibly make this a carbon copy of the for...of loop in Deck component instead? (if we move starter IDs up outside Deck component)
   useEffect(() => {
-    fetch().then(response => response.json().then(data => {
+    fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(response => response.json().then(data => {
       // GET (fetch) that image from Pokémon API (useEffect)
       setCardImage(data.sprites.front_default);
       // GET (fetch) the name of the card (text) from Pokémon API (useEffect)
