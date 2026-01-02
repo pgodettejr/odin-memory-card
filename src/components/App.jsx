@@ -3,6 +3,8 @@ import reactLogo from '../assets/react.svg'
 import viteLogo from '/vite.svg'
 import '../styles/App.css'
 
+// TODO: Nothing showing in the browser when we "npm run dev". Find out why that is.
+
 // Use "cv-app-complete" in Codesandbox as a reference in Chrome browser while building out the Memorymon app.
 
 // BEGIN
@@ -12,36 +14,34 @@ import '../styles/App.css'
 export default function App() {
   return (
     <>
-      <div className="App">
-        <div>
-          <a href="https://vite.dev" target="_blank">
-            <img src={viteLogo} className="logo" alt="Vite logo" />
-          </a>
-          <a href="https://react.dev" target="_blank">
-            <img src={reactLogo} className="logo react" alt="React logo" />
-          </a>
-        </div>
-
-        {/* Possibly move the heading elements above this div into their own separate wrapper */}
-        {/* SHOW the Heading (Game title) in the top left corner */}
-        <h1>Memorymon</h1>
-
-        {/* SHOW the game description directly under the Heading */}
-        <h3>
-          Get points by clicking on a image, but don't click on any more than once
-        </h3>
-
-        {/* TODO: currentCard and prevCard aren't defined */}
-        {/* SHOW the Scoreboard in the top right corner */}
-        <Scoreboard />
-
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-        <p className="read-the-docs">
-          Click on the Vite and React logos to learn more
-        </p>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
       </div>
+
+      {/* Possibly move the heading elements above this div into their own separate wrapper */}
+      {/* SHOW the Heading (Game title) in the top left corner */}
+      <h1>Memorymon</h1>
+
+      {/* SHOW the game description directly under the Heading */}
+      <h3>
+        Get points by clicking on a image, but don't click on any more than once
+      </h3>
+
+      {/* TODO: currentCard and prevCard aren't defined */}
+      {/* SHOW the Scoreboard in the top right corner */}
+      <Scoreboard />
+
+      <p>
+        Edit <code>src/App.jsx</code> and save to test HMR
+      </p>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
     </>
   );
 
@@ -52,6 +52,9 @@ export default function App() {
     // These states may need to move up outside this component as parents for everything. They definitely do if Scoreboard is in its own file.
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
+
+    // If we need this, pass it as a prop to Deck component and call it in "handleHighScore" function
+    // const [reset, setReset] = useState(true);
 
     // Functions that handle the change in scores
     // Example: setNumber(n => n + 1) to increment scores
@@ -68,22 +71,6 @@ export default function App() {
       }
     }
 
-    // This conditional below might end up going in the Card components and will call Scoreboard component?
-    // Or keep it here and somehow call Card component from here?
-
-    // TODO: Refactor this portion into its own "Game Over function" that resets the game when the player clicks on a duplicate card (see DevTools for Amphibia Memory Game)
-    // IF the player clicks on a card they've clicked on previously
-    if (currentCard === prevCard) {
-      // SET the Score back to 0
-      score = 0;
-      // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
-    } else if (currentCard !== prevCard) {
-      // INCREMENT the Score by 1
-      handleScore();
-      handleHighScore();
-    }
-    // ENDIF
-
     return (
       <>
         <div className="scoreboard">
@@ -95,6 +82,8 @@ export default function App() {
           </p>
         </div>
         <Deck
+          score={score}
+          highScore={highScore}
           handleScore={handleScore}
           handleHighScore={handleHighScore}
         />
@@ -106,6 +95,9 @@ export default function App() {
   // The cards should display again without calling the entire App component (unmount/remount) if possible. This is so the Scoreboard doesn't end up getting called again.
   // Should this function invoke when the entire App component mounts or just when the Deck component mounts?
   // This function is NOT a useEffect (because it needs to be called multiple times, not just once on mount?)
+  
+  // TODO: "Game Over" state when the player WINS (clicks all cards without duplicates) goes here.
+  // Likely need "props" passed into this function like in the Amphibia Memory Game example?
 
   // WHEN this function is called
   // INIT a function or equation that will:
@@ -168,9 +160,11 @@ export default function App() {
       <>
         <div className="deck">
           {/* DISPLAY each card inside the deck */}
+          {/* TODO: Uncaught TypeError: pokemon.map is not a function */}
           {pokemon.map((mon) => (
             <Card 
               key={mon.id}
+              pokemon={pokemon}
               cardImage={mon.sprites.front_default}
               cardName={mon.name}
               onClick={() => {
@@ -188,11 +182,37 @@ export default function App() {
 // Example Card component setup
 
 // useEffects for image and text generation Pokémon API call goes inside this component. They will go where the GET pseudocode is. The text has to match the image from the API - be in sync, even when randomized. The useEffects will not have an empty dependency array (changes after all renders or on mount + array item changes)
+// Likely need "props" passed into this function like in the Amphibia Memory Game example?
+
 // WHEN this component is called
 function Card() {
   const [cardImage, setCardImage] = useState();
   const [cardName, setCardName] = useState('');
+  const [clicked, setClicked] = useState(false);
 
+  // This conditional below might end up going in the Card components and will call Scoreboard component?
+  // Or keep it here and somehow call Card component from here?
+
+  // Uncaught ReferenceError: currentCard is not defined
+  // TODO: Refactor this portion into its own "Game Over function" that resets the game when the player clicks on a duplicate card (see DevTools for Amphibia Memory Game)
+  // If there are no cards left that have a clicked state of "false", then the game is over and the player has won. How do we check to see if there are any cards left with clicked state of "false"?
+
+const handleClick = () => {
+  // IF the player clicks on a card they've clicked on previously
+  if (currentCard === prevCard) {
+    // SET the Score back to 0
+    score = 0;
+    // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
+  } else if (currentCard !== prevCard) {
+    // INCREMENT the Score by 1
+    handleScore();
+    handleHighScore();
+  }
+  // ENDIF
+}
+
+
+  
   // response.json could be { conditional? } depending on the API structure
   // This might not need to be an Effect either since we only need to fetch the data once per card when the Deck component calls this component. 
   // Possibly make this a carbon copy of the for...of loop in Deck component instead? (if we move starter IDs up outside Deck component)
