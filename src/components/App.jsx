@@ -1,9 +1,21 @@
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import reactLogo from '../assets/react.svg'
 import viteLogo from '/vite.svg'
 import '../styles/App.css'
 
 // TODO: Nothing showing in the browser when we "npm run dev". Find out why that is.
+
+// TODO: Uncaught Error: Too many re-renders. React limits the number of renders to prevent an infinite loop.
+
+// TODO/BRANCH: Render "You Win/Lose" screen when game ends that also disables further card clicks until the game is reset/restarted. Google "how to disable clickable elements in React". Possibly a modal that pops up over the game board? DO NOT put it in the existing effect that ends the game when the player wins or in the handleClick function under the Card component. Make it its own separate render function.
+
+// Everything else autocomplete suggested after the last comment lol
+
+// TODO/BRANCH: Add a "Restart Game" button that resets all states to their initial values and reshuffles the cards.
+// TODO/BRANCH: Add sound effects for card clicks, winning, and losing.
+// TODO/BRANCH: Add animations for card flips and shuffling.
+// TODO/BRANCH: Implement difficulty levels that change the number of cards in the deck.
+// TODO/BRANCH: Add a timer that tracks how long it takes to complete the game.
 
 // Use "cv-app-complete" in Codesandbox as a reference in Chrome browser while building out the Memorymon app.
 
@@ -32,7 +44,6 @@ export default function App() {
         Get points by clicking on a image, but don't click on any more than once
       </h3>
 
-      {/* TODO: currentCard and prevCard aren't defined */}
       {/* SHOW the Scoreboard in the top right corner */}
       <Scoreboard />
 
@@ -95,15 +106,20 @@ export default function App() {
   // The cards should display again without calling the entire App component (unmount/remount) if possible. This is so the Scoreboard doesn't end up getting called again.
   // Should this function invoke when the entire App component mounts or just when the Deck component mounts?
   // This function is NOT a useEffect (because it needs to be called multiple times, not just once on mount?)
-  
-  // TODO: "Game Over" state when the player WINS (clicks all cards without duplicates) goes here.
+
+  // TODO: An error occurred in the <Deck> component. Consider adding an error boundary to your tree to customize error handling behavior. Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
 
   // WHEN this function is called
   // INIT a function or equation that will:
   function Deck(props) {
-    // These might also need to move up as parents for all the components not just this one. They definitely will if Shuffle is in its own file.
-    const [pokemon, setPokemon] = useState([]); // Acts as initial state as well as the state that holds the array of cards
-    const [gameState, setGameState] = useState('playing');
+    // These states might also need to move up as parents for all the components not just this one. They definitely will if Shuffle is in its own file.
+
+    // Acts as initial state as well as the state that holds the array of cards
+    const [pokemon, setPokemon] = useState([]); 
+
+    // Possible states: 'playing', 'won', 'lost'
+    const [gameState, setGameState] = useState('playing'); 
+
     // const [shuffled, setShuffled] = useState([]);
 
     // TODO: How are we going to implement the logic/code that only pulls the starters. Is it by ID number ranges? Do we need to use a "map()" method?
@@ -156,6 +172,7 @@ export default function App() {
       setPokemon(shuffle(pokemon));
     }, [pokemon]);
 
+    // Effect that checks for win condition whenever the score and the pokemon states change
     useEffect(() => {
       // IF the player has clicked on all cards without any duplicates
       if (props.score === pokemon.length) {
@@ -164,7 +181,8 @@ export default function App() {
         // POSSIBLY trigger some kind of celebration animation or sound effect here
         console.log("Congratulations! You've won the game!");
       }
-    }, [props.score, pokemon.length]);
+    }, [props.score, pokemon.length]); // Dependency array runs only when 'pokemon' state updates
+
 
     // Alternative useEffect per Gemini
     // useEffect(() => {
@@ -190,27 +208,31 @@ export default function App() {
 
     return (
       <>
-        <div className="deck">
-          {/* DISPLAY each card inside the deck */}
-          {/* TODO: Uncaught TypeError: pokemon.map is not a function */}
-          {pokemon.map((mon) => (
-            <Card 
-              key={mon.id}
-              pokemon={pokemon}
-              cardImage={mon.sprites.front_default}
-              cardName={mon.name}
-              score={props.score}
-              highScore={props.highScore}
-              handleScore={props.handleScore}
-              handleHighScore={props.handleHighScore}
-              onClick={() => {
-                // handleCardClick(mon.id);
-                // Logic for handling score changes may go here instead
-                console.log(`You clicked on ${mon.name}`); }
-              }
-            />
-          ))}
-        </div>
+        {pokemon.length > 0 ? (
+          <div className="deck">
+            {/* DISPLAY each card inside the deck */}
+            {pokemon.map((mon) => (
+              <Card 
+                // key={mon.id}
+                pokemon={pokemon}
+                cardImage={mon.sprites.front_default}
+                cardName={mon.name}
+                gameState={gameState}
+                score={props.score}
+                highScore={props.highScore}
+                handleScore={props.handleScore}
+                handleHighScore={props.handleHighScore}
+                // onClick={() => {
+                //   // handleCardClick(mon.id);
+                //   // Logic for handling score changes may go here instead
+                //   console.log(`You clicked on ${mon.name}`); }
+                // }
+              />
+            ))}
+          </div>
+        ) : (
+          <p>Loading cards...</p>
+        )}
       </>
     );
   }
@@ -230,6 +252,9 @@ function Card(props) {
   // If there are no cards left that have a clicked state of "false", then the game is over and the player has won. How do we check to see if there are any cards left with clicked state of "false"?
 
   const handleClick = () => {
+    // Prevents state updates if the game is already over
+    if (props.gameState === 'won') return;
+
     setClicked(true);
 
     // IF the player clicks on a card they've clicked on previously
