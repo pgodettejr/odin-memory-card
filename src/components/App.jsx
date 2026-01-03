@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import reactLogo from '../assets/react.svg'
 import viteLogo from '/vite.svg'
 import '../styles/App.css'
@@ -97,13 +97,13 @@ export default function App() {
   // This function is NOT a useEffect (because it needs to be called multiple times, not just once on mount?)
   
   // TODO: "Game Over" state when the player WINS (clicks all cards without duplicates) goes here.
-  // Likely need "props" passed into this function like in the Amphibia Memory Game example?
 
   // WHEN this function is called
   // INIT a function or equation that will:
-  function Deck() {
+  function Deck(props) {
     // These might also need to move up as parents for all the components not just this one. They definitely will if Shuffle is in its own file.
-    const [pokemon, setPokemon] = useState([]);
+    const [pokemon, setPokemon] = useState([]); // Acts as initial state as well as the state that holds the array of cards
+    const [gameState, setGameState] = useState('playing');
     // const [shuffled, setShuffled] = useState([]);
 
     // TODO: How are we going to implement the logic/code that only pulls the starters. Is it by ID number ranges? Do we need to use a "map()" method?
@@ -156,6 +156,38 @@ export default function App() {
       setPokemon(shuffle(pokemon));
     }, [pokemon]);
 
+    useEffect(() => {
+      // IF the player has clicked on all cards without any duplicates
+      if (props.score === pokemon.length) {
+        // SET the game state to "won"
+        setGameState('won');
+        // POSSIBLY trigger some kind of celebration animation or sound effect here
+        console.log("Congratulations! You've won the game!");
+      }
+    }, [props.score, pokemon.length]);
+
+    // Alternative useEffect per Gemini
+    // useEffect(() => {
+    //   const allClicked = pokemon.every((mon) => mon.clicked === true); // Might not need === true
+    //   if (allClicked) {
+    //     setGameState('won');
+    //     console.log("Congratulations! You've won the game!");
+    //   }
+    // }, [pokemon]); // Dependency array runs only when 'pokemon' state updates
+
+    // const handleCardClick = (id) => {
+    //   // Logic for handling card clicks and updating score goes here
+      
+    //   // Prevents state updates if the game is already over
+    //   if (gameState === 'won') return;
+
+    //   setPokemon((prevPokemon) =>
+    //     prevPokemon.map((mon) =>
+    //       mon.id === id ? { ...mon, clicked: true } : mon
+    //     )
+    //   );
+    // };
+
     return (
       <>
         <div className="deck">
@@ -167,7 +199,12 @@ export default function App() {
               pokemon={pokemon}
               cardImage={mon.sprites.front_default}
               cardName={mon.name}
+              score={props.score}
+              highScore={props.highScore}
+              handleScore={props.handleScore}
+              handleHighScore={props.handleHighScore}
               onClick={() => {
+                // handleCardClick(mon.id);
                 // Logic for handling score changes may go here instead
                 console.log(`You clicked on ${mon.name}`); }
               }
@@ -182,37 +219,32 @@ export default function App() {
 // Example Card component setup
 
 // useEffects for image and text generation Pokémon API call goes inside this component. They will go where the GET pseudocode is. The text has to match the image from the API - be in sync, even when randomized. The useEffects will not have an empty dependency array (changes after all renders or on mount + array item changes)
-// Likely need "props" passed into this function like in the Amphibia Memory Game example?
 
 // WHEN this component is called
-function Card() {
+function Card(props) {
   const [cardImage, setCardImage] = useState();
   const [cardName, setCardName] = useState('');
   const [clicked, setClicked] = useState(false);
 
-  // This conditional below might end up going in the Card components and will call Scoreboard component?
-  // Or keep it here and somehow call Card component from here?
-
-  // Uncaught ReferenceError: currentCard is not defined
-  // TODO: Refactor this portion into its own "Game Over function" that resets the game when the player clicks on a duplicate card (see DevTools for Amphibia Memory Game)
+  // This conditional below might go back to the Scoreboard component and somehow call Card component from there?
   // If there are no cards left that have a clicked state of "false", then the game is over and the player has won. How do we check to see if there are any cards left with clicked state of "false"?
 
-const handleClick = () => {
-  // IF the player clicks on a card they've clicked on previously
-  if (currentCard === prevCard) {
-    // SET the Score back to 0
-    score = 0;
-    // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
-  } else if (currentCard !== prevCard) {
-    // INCREMENT the Score by 1
-    handleScore();
-    handleHighScore();
+  const handleClick = () => {
+    setClicked(true);
+
+    // IF the player clicks on a card they've clicked on previously
+    if (clicked === true) {
+      // SET the Score back to 0
+      props.handleScore(0);
+      // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
+    } else {
+      // INCREMENT the Score by 1
+      props.handleScore();
+      props.handleHighScore();
+    }
+    // ENDIF
   }
-  // ENDIF
-}
 
-
-  
   // response.json could be { conditional? } depending on the API structure
   // This might not need to be an Effect either since we only need to fetch the data once per card when the Deck component calls this component. 
   // Possibly make this a carbon copy of the for...of loop in Deck component instead? (if we move starter IDs up outside Deck component)
@@ -228,7 +260,9 @@ const handleClick = () => {
   return (
     <>
       {/* DISPLAY a card */}
-      <div className="card">
+      {/* CALL the handleClick function when the card is clicked */}
+      {/* Should this be a button instead of a div for accessibility purposes? */}
+      <div className="card" key={cardImage} onClick={handleClick}>
         {/* DISPLAY another image inside the card */}
         <img src={cardImage} alt={cardName} />
         {/* SHOW a text description of the card */}

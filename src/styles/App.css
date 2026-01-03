@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -34,7 +36,17 @@
 }
 
 .card {
-  padding: 2em;
+  width: 140px;
+  height: 175px;
+  overflow: hidden;
+  background-color: goldenrod;
+  border-radius: 1em; /* Make this 15px instead? */
+  box-shadow: 0 0 2em #0008; /* Do we need this? */
+  font-size: 23px;
+  font-family: "Press Start 2P"; /* Keep this font? If so, do we need "cursive" after it? */
+  margin: 1em; /* Make this 10px instead? */
+  padding: 2em; /* Do we need this? */
+  text-align: center; /* Do we need this? */
 }
 
 .read-the-docs {
