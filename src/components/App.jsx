@@ -3,10 +3,6 @@ import reactLogo from '../assets/react.svg'
 import viteLogo from '/vite.svg'
 import '../styles/App.css'
 
-// TODO: Nothing showing in the browser when we "npm run dev". Find out why that is.
-
-// TODO: Uncaught Error: Too many re-renders. React limits the number of renders to prevent an infinite loop.
-
 // TODO/BRANCH: Render "You Win/Lose" screen when game ends that also disables further card clicks until the game is reset/restarted. Google "how to disable clickable elements in React". Possibly a modal that pops up over the game board? DO NOT put it in the existing effect that ends the game when the player wins or in the handleClick function under the Card component. Make it its own separate render function.
 
 // Everything else autocomplete suggested after the last comment lol
@@ -22,8 +18,8 @@ import '../styles/App.css'
 // BEGIN
 
 // WHEN the user goes to the website/browser app via web address
-// DISPLAY the entire application
 export default function App() {
+  // DISPLAY the entire application
   return (
     <>
       <div>
@@ -45,7 +41,9 @@ export default function App() {
       </h3>
 
       {/* SHOW the Scoreboard in the top right corner */}
-      <Scoreboard />
+      <div className="App">
+        <Scoreboard />
+      </div>
 
       <p>
         Edit <code>src/App.jsx</code> and save to test HMR
@@ -55,6 +53,39 @@ export default function App() {
       </p>
     </>
   );
+
+// Attempt at writing an Error Boundary component to catch errors in the Deck component. 
+
+// Unreachable code detected.ts(7027)
+// Compilation Skipped: Inline `class` declarations are not supported
+
+// Move class declarations outside of components/hooks.
+
+//   class ErrorBoundary extends React.Component {
+//     constructor(props) {
+//       super(props);
+//       this.state = { hasError: false };
+//     }
+
+//     static getDerivedStateFromError(error) {
+//       // Update state so the next render will show the fallback UI.
+//       return { hasError: true };
+//     }
+
+//     componentDidCatch(error, errorInfo) {
+//       // You can also log the error to an error reporting service
+//       console.error("ErrorBoundary caught an error", error, errorInfo);
+//     }
+
+//     render() {
+//       if (this.state.hasError) {
+//         // You can render any custom fallback UI
+//         return <h1>Something went wrong.</h1>;
+//       }
+
+//       return this.props.children; 
+//     }
+//   }
 
   // Scoreboard component may go in its own separate file
 
@@ -92,12 +123,15 @@ export default function App() {
             High Score: {highScore}
           </p>
         </div>
-        <Deck
-          score={score}
-          highScore={highScore}
-          handleScore={handleScore}
-          handleHighScore={handleHighScore}
-        />
+
+        <div className="play-mat">
+          <Deck
+            score={score}
+            highScore={highScore}
+            handleScore={handleScore}
+            handleHighScore={handleHighScore}
+          />
+        </div>
       </>
     );
   }
@@ -107,12 +141,21 @@ export default function App() {
   // Should this function invoke when the entire App component mounts or just when the Deck component mounts?
   // This function is NOT a useEffect (because it needs to be called multiple times, not just once on mount?)
 
+  // TODO: While this component is being called, nothing is showing in the browser any time we "npm run dev". Find out why that is.
+
   // TODO: An error occurred in the <Deck> component. Consider adding an error boundary to your tree to customize error handling behavior. Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+  // Attempt at writing the Error Boundary is above the Scoreboard component. It is currently commented out because it is causing an error that says "Unreachable code detected.ts(7027)".
+
+
+  // TODO: Uncaught Error: Too many re-renders. React limits the number of renders to prevent an infinite loop. This is happening even when all component calls and the Vite and React logos are commented out. Find out why this is happening and how to fix it. 
+
+  // ATTEMPT #1 (Autocomplete): It might be because of the useEffects that are being called in the Card component. Try moving those useEffects up to the Deck component instead and see if that fixes the issue. It didn't.
 
   // WHEN this function is called
   // INIT a function or equation that will:
   function Deck(props) {
-    // These states might also need to move up as parents for all the components not just this one. They definitely will if Shuffle is in its own file.
+    // These states might also need to move up as parents for all the components not just this one. They definitely will if Deck is in its own file.
 
     // Acts as initial state as well as the state that holds the array of cards
     const [pokemon, setPokemon] = useState([]); 
@@ -152,8 +195,8 @@ export default function App() {
       }
     };
 
-    // CALL the function that fetches only starter pokemon from the API
-    setPokemon(starters);
+    // CALL the function that fetches only starter pokemon from the API. Do we need the extra parentheses after "starters" here? I think we do because it's an async function that returns a promise.
+    setPokemon(starters());
 
     // Does this even need to be a useEffect? Or just a normal function called when Deck component mounts?
     // SET the array of cards in a completely different random order
@@ -173,6 +216,7 @@ export default function App() {
     }, [pokemon]);
 
     // Effect that checks for win condition whenever the score and the pokemon states change
+    // OPTION: Possibly add a property to each card object in the pokemon array that was returned via JSON. Property would represent the clicked status of the card. Then we could check for win condition by checking if all cards have been clicked (clicked === true). This would be an alternative to checking if the score is equal to the length of the pokemon array. (e.g. pokemon.every((mon) => mon.clicked === true) or pokemon.clicked = true)
     useEffect(() => {
       // IF the player has clicked on all cards without any duplicates
       if (props.score === pokemon.length) {
@@ -213,7 +257,7 @@ export default function App() {
             {/* DISPLAY each card inside the deck */}
             {pokemon.map((mon) => (
               <Card 
-                // key={mon.id}
+                key={mon.id}
                 pokemon={pokemon}
                 cardImage={mon.sprites.front_default}
                 cardName={mon.name}
