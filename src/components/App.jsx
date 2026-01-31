@@ -65,7 +65,7 @@ import '../styles/App.css'
 // WHEN the user goes to the website/browser app via web address
 export default function App() {
   // Acts as initial state as well as the state that holds the array of cards
-  const [pokemon, setPokemon] = useState([]);
+  // const [pokemon, setPokemon] = useState([]);
 
   // This just makes the page go blank again on render
   // const [pokemon, setPokemon] = useState();
@@ -95,7 +95,7 @@ export default function App() {
       {/* SHOW the Scoreboard in the top right corner */}
       <div className="App">
         <Scoreboard
-          pokemon={pokemon}
+          // pokemon={pokemon}
         />
       </div>
 
@@ -111,8 +111,12 @@ export default function App() {
   // Scoreboard component may go in its own separate file
 
   // WHEN this component is called
-  function Scoreboard(props) {
+  function Scoreboard() {
     // These states may need to move up outside this component as parents for everything. They definitely do if Scoreboard is in its own file.
+
+    // Acts as initial state as well as the state that holds the array of cards
+    const [pokemon, setPokemon] = useState([]);
+
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
 
@@ -178,7 +182,8 @@ export default function App() {
 
         <div className="play-mat">
           <Deck
-            pokemon={props.pokemon}
+            pokemon={pokemon}
+            setPokemon={setPokemon}
             score={score}
             highScore={highScore}
             gameState={gameState}
@@ -202,7 +207,7 @@ export default function App() {
 
   // ATTEMPT #1 (Autocomplete): It might be because of the useEffects that are being called in the Card component. Try moving those useEffects up to the Deck component instead and see if that fixes the issue. It didn't.
 
-  // ATTEMPT #2: Lift 'pokemon' and 'gameState' states up to the App and Scoreboard components respectively and pass them down as props to the Deck component. This way, the Deck component can manage the state of the cards and the game state without causing too many re-renders.
+  // ATTEMPT #2: Lift 'pokemon' and 'gameState' states up to the App and Scoreboard components respectively and pass them down as props to the Deck component. This way, the Deck component can manage the state of the cards and the game state without causing too many re-renders. We later moved 'pokemon' state back down to the Scoreboard component to resolve a different infinite loop error.
 
   // ATTEMPT #3 (AI DevTools Console): Provide a default empty array for 'pokemon' if it's a prop that's not always provided by the parent (Scoreboard) component. e.g. 'function Deck({ ...props?, pokemon = [] })
 
@@ -253,7 +258,7 @@ export default function App() {
     useEffect(() => {
       const starterInfo = async () => {
         const starterCards = await starters();
-        setPokemon(starterCards);
+        props.setPokemon(starterCards);
       }
 
       starterInfo();
@@ -296,38 +301,41 @@ export default function App() {
     //   );
     // };
 
-    if (pokemon) {
+    if (props.pokemon) {
       // SET the cards in the newly shuffled order
       // setPokemon(shuffle(pokemon));
-      console.log('Pokemon array: ', pokemon);
-      console.log(pokemon.length);
+      console.log('Pokemon array: ', props.pokemon);
+      console.log(props.pokemon.length);
     }
 
     return (
       <>
       {/* TODO: Uncaught TypeError: Cannot read properties of undefined (reading 'length') for 'pokemon.length'. Can't read the state of pokemon array as it's not defined yet? Does it have to do with the API call not completing yet? Read over when state is defined/called and when the API call completes. There is nothing in the pokemon array on page load - no fetching from API? */}
-        {pokemon.length === 0 ? (
+        {props.pokemon.length === 0 ? (
           <p>Loading the cards...</p>
         ) : (
           <div className="deck">
             {/* DISPLAY each card inside the deck */}
             {/* Do we even need cardImage and cardName here since it's being called in the Card component? Maybe we just need to pass the entire "mon" object as a prop to the Card component and then call the properties inside the Card component instead? */}
-            {pokemon.map((mon) => (
+            {props.pokemon.map((mon) => (
               <Card 
                 key={mon.id}
-                pokemon={pokemon}
+                pokemon={mon}
                 cardImage={mon.sprites.front_default}
                 cardName={mon.name}
                 score={props.score}
                 highScore={props.highScore}
                 handleScore={props.handleScore}
                 handleHighScore={props.handleHighScore}
+                handleWin={props.handleWin}
+                gameState={props.gameState}
+                shuffle={() => shuffle(props.pokemon)}
                 // onClick={() => {
                 //   // handleCardClick(mon.id);
                 //   // Logic for handling score changes may go here instead
                 //   console.log(`You clicked on ${mon.name}`); }
                 // }
-                onClick={() => shuffle(pokemon)}
+                // onClick={() => shuffle(pokemon)}
               />
             ))}
           </div>
@@ -358,6 +366,8 @@ function Card(props) {
 
     // IF the player clicks on a card they've clicked on previously
     if (clicked === true) {
+      // DETERMINE if all cards have been clicked on already
+      props.handleWin();
       // SET the Score back to 0
       props.handleScore(0);
       // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
@@ -365,6 +375,8 @@ function Card(props) {
       // INCREMENT the Score by 1
       props.handleScore();
       props.handleHighScore();
+      props.shuffle();
+      // props.setPokemon(props.shuffle()); // Do we need this? Test it.
     }
     // ENDIF
   }
