@@ -136,7 +136,7 @@ export default function App() {
 
     function handleHighScore() {
       // IF this is the player's first game OR the player's score is greater than the previous High Score
-      if (highScore === 0 || score > highScore) {
+      if (highScore === 0 || score > highScore) { // Do we need 'highScore === 0' check here?
         // INCREMENT the High Score (by 1? by how much?)
         setHighScore(score);
       }
@@ -164,8 +164,12 @@ export default function App() {
       if (pokemon && score === pokemon.length) {
         // SET the game state to "won"
         setGameState('won');
+        // CALL 'handleHighScore' function here if possible?
+        // handleHighScore();
         // POSSIBLY trigger some kind of celebration animation or sound effect here
         console.log("Congratulations! You've won the game!");
+        // RESET Score back to 0 for a new game
+        setScore(0); 
       }
     }
 
@@ -213,7 +217,7 @@ export default function App() {
 
   // WHEN this function is called
   // INIT a function or equation that will:
-  function Deck(props) {
+  function Deck(props) { // POSSIBLY destructure 'props' here
     // const [shuffled, setShuffled] = useState([]);
 
     // TODO: How are we going to implement the logic/code responsible for only pulling the starters. Will it be by ID number ranges? Do we need to use a "map()" method?
@@ -262,7 +266,7 @@ export default function App() {
       }
 
       starterInfo();
-    }, []);
+    }, [props.setPokemon]); // Dependency array with props.setPokemon to avoid infinite loop. Also try 'props.pokemon' and 'props' alone.
 
     // Does this even need to be a useEffect? Or just a normal function called when Deck component mounts?
     // SET the array of cards in a completely different random order
@@ -277,8 +281,20 @@ export default function App() {
       }
 
       return shuffledArray;
+
+      // props.setPokemon(shuffledArray); - Unreachable code detected.ts(7027) error if we try to set the state of pokemon here after shuffling. We may need to call this function inside another function that sets the state of pokemon instead.
     };
 
+    const randomizeCards = () => {
+      props.setPokemon(shuffle(props.pokemon));
+    }
+
+    // const randomizeCardsAuto = () => {
+    //   const shuffled = shuffle(props.pokemon);
+    //   props.setPokemon(shuffled);
+    // };
+
+  
     // Alternative useEffect per Gemini
     // useEffect(() => {
     //   const allClicked = pokemon.every((mon) => mon.clicked === true); // Might not need === true
@@ -329,7 +345,8 @@ export default function App() {
                 handleHighScore={props.handleHighScore}
                 handleWin={props.handleWin}
                 gameState={props.gameState}
-                shuffle={() => shuffle(props.pokemon)}
+                randomizeCards={randomizeCards}
+                // shuffle={() => shuffle(props.pokemon)}
                 // onClick={() => {
                 //   // handleCardClick(mon.id);
                 //   // Logic for handling score changes may go here instead
@@ -358,6 +375,8 @@ function Card(props) {
   // This conditional below might go back to the Scoreboard component and somehow call Card component from there?
   // If there are no cards left that have a clicked state of "false", then the game is over and the player has won. How do we check to see if there are any cards left with clicked state of "false"?
 
+  // TODO: May need to flip the conditional logic positioning with the "setClicked(true)" call here to follow the Guard Clause pattern properly. Test it out.
+  // WHEN the card is clicked
   const handleClick = () => {
     // Prevents state updates if the game is already over
     if (props.gameState === 'won') return;
@@ -368,16 +387,18 @@ function Card(props) {
     if (clicked === true) {
       // DETERMINE if all cards have been clicked on already
       props.handleWin();
-      // SET the Score back to 0
-      props.handleScore(0);
+      // SET the high score if applicable
+      props.handleHighScore();
       // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
     } else {
       // INCREMENT the Score by 1
       props.handleScore();
-      props.handleHighScore();
-      props.shuffle();
+      // props.handleHighScore();
+      // props.shuffle();
       // props.setPokemon(props.shuffle()); // Do we need this? Test it.
     }
+
+    props.randomizeCards();
     // ENDIF
   }
 
