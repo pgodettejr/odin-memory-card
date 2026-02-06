@@ -173,6 +173,16 @@ export default function App() {
       }
     }
 
+    function handleLoss() {
+      if (score !== pokemon.length) {
+        setGameState('lost');
+        // POSSIBLY trigger some kind of celebration animation or sound effect here
+        console.log("Game Over. You've lost the game. There were other cards you hadn't clicked on yet.");
+        // RESET Score back to 0 for a new game
+        setScore(0); 
+      }
+    }
+
     return (
       <>
         <div className="scoreboard">
@@ -194,6 +204,7 @@ export default function App() {
             handleScore={handleScore}
             handleHighScore={handleHighScore}
             handleWin={handleWin}
+            handleLoss={handleLoss}
           />
         </div>
       </>
@@ -344,6 +355,7 @@ export default function App() {
                 handleScore={props.handleScore}
                 handleHighScore={props.handleHighScore}
                 handleWin={props.handleWin}
+                handleLoss={props.handleLoss}
                 gameState={props.gameState}
                 randomizeCards={randomizeCards}
                 // shuffle={() => shuffle(props.pokemon)}
@@ -379,17 +391,25 @@ function Card(props) {
   // WHEN the card is clicked
   const handleClick = () => {
     // Prevents state updates if the game is already over
-    if (props.gameState === 'won') return;
+    // TODO: Return the game state to 'playing' after a previous win or loss state?
+    if (props.gameState === 'won' || props.gameState === 'lost') return;
 
-    setClicked(true);
+    setClicked(!clicked);
 
     // IF the player clicks on a card they've clicked on previously
-    if (clicked === true) {
+    if (clicked) {
       // DETERMINE if all cards have been clicked on already
       props.handleWin();
       // SET the high score if applicable
       props.handleHighScore();
-      // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
+      // props.setScore(0);
+      props.handleLoss();
+    // } else if (clicked === true) {
+    //   // DETERMINE if any of the other cards have not been clicked on yet
+    //   props.handleLoss();
+    //   // SET the high score
+    //   props.handleHighScore();
+    // ELSE IF the player clicked on a card that is different from all the previous cards they've clicked on
     } else {
       // INCREMENT the Score by 1
       props.handleScore();
@@ -401,6 +421,13 @@ function Card(props) {
     props.randomizeCards();
     // ENDIF
   }
+
+  // Our version of Amphibia's useEffect in their Card component that checks for win condition after every click. We might not even need this if we call the "handleWin" function inside the "handleClick" function instead. Test it out.
+  // useEffect(() => {
+  //   if (props.gameState === 'won' || props.gameState === 'lost') {
+  //     setClicked(false);
+  //   }
+  // }, [props.gameState]);
 
   // response.json could be { conditional? } depending on the API structure
   // This might not need to be an Effect either since we only need to fetch the data once per card when the Deck component calls this component. 
